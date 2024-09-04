@@ -3,6 +3,7 @@ use std::fs;
 use sqlx::mysql::MySqlPool;
 use std::env;
 use dotenvy::dotenv;
+use tower_http::services::ServeDir;
 
 #[tokio::main]
 async fn main() {
@@ -19,7 +20,8 @@ async fn main() {
     let app = Router::new()
         .route("/hello", get(hello))
         .route("/world", get(world))
-        .route("/db_test", get(move || db_test(pool.clone()))); // Route to test the DB connection
+        .route("/db_test", get(move || db_test(pool.clone()))) // Route to test the DB connection
+        .nest_service("/static", ServeDir::new("static")); 
 
     // run our app with hyper, listening globally on port 3000
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
