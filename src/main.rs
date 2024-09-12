@@ -1,9 +1,17 @@
-use axum::{response::Html, routing::get, Router};
+use axum::{response::Html, routing::get, routing::post, Router, extract::Json, response::IntoResponse};
 use std::fs;
-use sqlx::mysql::MySqlPool;
 use std::env;
+use std::sync::{Arc, Mutex};
+use once_cell::sync::Lazy;
+use sqlx::mysql::MySqlPool;
 use dotenvy::dotenv;
-use tower_http::services::ServeDir;
+use tower_http::services::fs::ServeDir;
+use serde::Deserialize;
+
+
+// Define a global variable for storing the category
+static CATEGORY: once_cell::sync::Lazy<Arc<Mutex<Option<String>>>> = 
+    once_cell::sync::Lazy::new(|| Arc::new(Mutex::new(None)));
 
 #[tokio::main]
 async fn main() {
@@ -18,9 +26,10 @@ async fn main() {
 
     // Build our application with two routes
     let app = Router::new()
-        .route("/hello", get(hello))
-        .route("/world", get(world))
-        .route("/db_test", get(move || db_test(pool.clone()))) // Route to test the DB connection
+        .route("/homepage", get(homepage))
+        .route("/set_category", post(set_category))
+        .route("/categories", get(categories))
+        .route("/navbar", get(navbar)) 
         .nest_service("/static", ServeDir::new("static")); 
 
     // run our app with hyper, listening globally on port 3000
@@ -29,25 +38,42 @@ async fn main() {
 }
 
 
-async fn hello() -> Html<String> {
+async fn homepage() -> Html<String> {
     // Read the hello.html template
-    let hello_template = fs::read_to_string("templates/hello.html")
-        .expect("Something went wrong reading the hello.html file");
-    Html(hello_template)
+    let homepage_template = fs::read_to_string("templates/homepage.html")
+        .expect("Something went wrong reading the homepage.html file");
+    Html(homepage_template)
 }
 
-async fn world() -> Html<String> {
-    // Read the world.html template
-    let world_template = fs::read_to_string("templates/world.html")
-        .expect("Something went wrong reading the world.html file");
-    Html(world_template)
+#[derive(Deserialize)]
+struct CategoryPayload{
+    category: String,
 }
 
-// Function to test database connection
-async fn db_test(pool: MySqlPool) -> Html<String> {
-    // Try to acquire a connection from the pool
-    match pool.acquire().await {
-        Ok(_) => Html("<h1>Database Connection Successful!</h1>".to_string()),
-        Err(_) => Html("<h1>Failed to Connect to Database</h1>".to_string()),
-    }
+async fn set_category(
+    Json(payload): Json<CategoryPayload>,
+) -> impl IntoResponse {
+    let mut category = CATEGORY.lock().unwrap();
+    *category = Some(payload.category);
+    "Category received".into_response()
+}
+
+async fn categories() -> Html<String> {
+    let category = CATEGORY.lock().unwrap();
+    let category_display = match &*category {
+        Some(cat) => format!("Selected Category: {}", cat),
+        None => "No category selected".to_string(),
+    };
+
+    let categories_template = fs::read_to_string("templates/categories.html")
+        .expect("Something went wrong reading the categories.html file");
+
+    Html(format!("{}<p>{}</p>", categories_template, category_display))
+}
+
+async fn navbar() -> Html<String> {
+    // Read the navbar.html template
+    let navbar_template = fs::read_to_string("templates/navbar.html")
+        .expect("Something went wrong reading the navbar.html file");
+    Html(navbar_template)
 }

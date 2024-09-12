@@ -12,3 +12,4 @@ minijinja = { version = "2.2.0", features = ["builtins"] }
 sqlx = { version = "0.8.0", features = ["mysql", "runtime-tokio-native-tls"] }
 dotenvy = "0.15"
 tower-http = { version = "0.5.2", features = ["fs"] }
+once_cell = "1.16"
