@@ -1,79 +1,34 @@
-use axum::{response::Html, routing::get, routing::post, Router, extract::Json, response::IntoResponse};
-use std::fs;
-use std::env;
-use std::sync::{Arc, Mutex};
-use once_cell::sync::Lazy;
-use sqlx::mysql::MySqlPool;
+mod routes;       // Declare the routes module (from the routes directory)
+mod rs_template;  // Declare the templates module (from the rs_template directory)
+mod db;           // Declare the db module (from db.rs)
+
+use axum::Router;
 use dotenvy::dotenv;
+use sqlx::mysql::MySqlPool;
 use tower_http::services::fs::ServeDir;
-use serde::Deserialize;
-
-
-// Define a global variable for storing the category
-static CATEGORY: once_cell::sync::Lazy<Arc<Mutex<Option<String>>>> = 
-    once_cell::sync::Lazy::new(|| Arc::new(Mutex::new(None)));
+use std::env;
 
 #[tokio::main]
 async fn main() {
-    //load enviroment variables from .env file
+    // Load environment variables from .env file
     dotenv().ok();
 
-    //get the database URL from .env
+    // Get the database URL from .env file
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
 
     // Create a connection pool for MySQL
-    let pool = MySqlPool::connect(&database_url).await.expect("Failed to create pool");
+    let pool = MySqlPool::connect(&database_url)
+        .await
+        .expect("Failed to create pool");
 
-    // Build our application with two routes
+    // Build the Axum application by routing to different parts of the app
     let app = Router::new()
-        .route("/homepage", get(homepage))
-        .route("/set_category", post(set_category))
-        .route("/categories", get(categories))
-        .route("/navbar", get(navbar)) 
-        .nest_service("/static", ServeDir::new("static")); 
+        .nest("/navbar", routes::navbar::navbar_routes())    // Navbar route
+        .nest("/homepage", routes::homepage::homepage_routes()) // Homepage route
+        .nest("/db_test", routes::db_test::db_test_routes(pool)) // DB test route
+        .nest_service("/static", ServeDir::new("static"));   // Serve static files like CSS, JS
 
-    // run our app with hyper, listening globally on port 3000
+    // Run the Axum web app with Hyper on port 3000
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
     axum::serve(listener, app).await.unwrap();
-}
-
-
-async fn homepage() -> Html<String> {
-    // Read the hello.html template
-    let homepage_template = fs::read_to_string("templates/homepage.html")
-        .expect("Something went wrong reading the homepage.html file");
-    Html(homepage_template)
-}
-
-#[derive(Deserialize)]
-struct CategoryPayload{
-    category: String,
-}
-
-async fn set_category(
-    Json(payload): Json<CategoryPayload>,
-) -> impl IntoResponse {
-    let mut category = CATEGORY.lock().unwrap();
-    *category = Some(payload.category);
-    "Category received".into_response()
-}
-
-async fn categories() -> Html<String> {
-    let category = CATEGORY.lock().unwrap();
-    let category_display = match &*category {
-        Some(cat) => format!("Selected Category: {}", cat),
-        None => "No category selected".to_string(),
-    };
-
-    let categories_template = fs::read_to_string("templates/categories.html")
-        .expect("Something went wrong reading the categories.html file");
-
-    Html(format!("{}<p>{}</p>", categories_template, category_display))
-}
-
-async fn navbar() -> Html<String> {
-    // Read the navbar.html template
-    let navbar_template = fs::read_to_string("templates/navbar.html")
-        .expect("Something went wrong reading the navbar.html file");
-    Html(navbar_template)
 }

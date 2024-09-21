@@ -12,10 +12,12 @@ function categoryButton(category) {
     })
         .then(function (response) {
         if (response.ok) {
-            window.location.href = '/categories';
+            // If successful, the server will automatically redirect to /category
+            window.location.href = '/category';
         }
         else {
             console.error('Failed to set category');
+            throw new Error('Failed to set category');
         }
     })
         .catch(function (error) {

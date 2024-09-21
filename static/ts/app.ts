@@ -4,7 +4,7 @@ function homeButton(){
     window.location.href = '/hello'
 }
 
-function categoryButton(category: string){
+function categoryButton(category: string) {
     fetch('/set_category', {
         method: 'POST',
         headers: {
@@ -14,12 +14,20 @@ function categoryButton(category: string){
     })
     .then(response => {
         if (response.ok) {
-            window.location.href = '/categories';
+            // Get the HTML content returned from the Rust backend
+            return response.text(); 
         } else {
             console.error('Failed to set category');
+            throw new Error('Failed to set category');
         }
+    })
+    .then(htmlContent => {
+        // Replace the current page content with the new HTML content
+        document.body.innerHTML = htmlContent;
     })
     .catch(error => {
         console.error('Error: ', error);
-    })
+    });
 }
+
+
