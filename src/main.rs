@@ -25,7 +25,8 @@ async fn main() {
     let app = Router::new()
         .nest("/navbar", routes::navbar::navbar_routes())    // Navbar route
         .nest("/homepage", routes::homepage::homepage_routes()) // Homepage route
-        .nest("/db_test", routes::db_test::db_test_routes(pool)) // DB test route
+        .nest("/db_test", routes::db_test::db_test_routes(pool.clone())) // DB test route
+        .nest("/db_post_test", routes::db_post_test::db_post_test_routes(pool))  // Route for POST testing
         .nest_service("/static", ServeDir::new("static"));   // Serve static files like CSS, JS
 
     // Run the Axum web app with Hyper on port 3000

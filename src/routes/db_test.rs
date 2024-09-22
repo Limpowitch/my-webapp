@@ -1,7 +1,7 @@
 use axum::{response::Html, routing::get, Router};
 use sqlx::mysql::MySqlPool;
 use crate::rs_template::db_test_template::DbTestTemplate; // Import the template struct
-use crate::db::Recipe; // Import the Recipe struct
+use crate::db::GetRecipe; // Import the Recipe struct
 use askama::Template; // Import the Template trait to access render()
 
 pub fn db_test_routes(pool: MySqlPool) -> Router {
@@ -10,7 +10,7 @@ pub fn db_test_routes(pool: MySqlPool) -> Router {
 
 async fn db_test(pool: MySqlPool) -> Html<String> {
     // Query the database for recipes
-    let recipes = sqlx::query_as::<_, Recipe>("SELECT idrecipes, recipename, recipecategory FROM recipes")
+    let recipes = sqlx::query_as::<_, GetRecipe>("SELECT idrecipes, recipename, recipecategory FROM recipes")
         .fetch_all(&pool)
         .await
         .expect("Failed to fetch recipes");
