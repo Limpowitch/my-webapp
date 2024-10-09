@@ -24,6 +24,7 @@ async fn main() {
     // Build the Axum application by routing to different parts of the app
     let app = Router::new()
         .nest("/navbar", routes::navbar::navbar_routes())    // Navbar route
+        .nest("/footer", routes::footer::footer_routes())
         .nest("/homepage", routes::homepage::homepage_routes(pool.clone())) // Homepage route
         .nest("/db_test", routes::db_test::db_test_routes(pool.clone())) // DB test route
         .nest("/db_post_test", routes::db_post_test::db_post_test_routes(pool))  // Route for POST testing

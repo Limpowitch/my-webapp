@@ -10,7 +10,7 @@ pub fn db_test_routes(pool: MySqlPool) -> Router {
 
 async fn db_test(pool: MySqlPool) -> Html<String> {
     // Query the database for recipes
-    let recipes = sqlx::query_as::<_, GetRecipe>("SELECT idrecipes, recipename, recipecategory FROM recipes")
+    let recipes = sqlx::query_as::<_, GetRecipe>("SELECT recipeid, recipename, recipecategory FROM recipes")
         .fetch_all(&pool)
         .await
         .expect("Failed to fetch recipes");
