@@ -10,7 +10,7 @@ pub fn homepage_routes(pool: MySqlPool) -> Router {
 
 async fn homepage(pool: MySqlPool) -> Html<String> {
     // Query the database for recipes
-    let recipes = sqlx::query_as::<_, GetRecipe>("SELECT recipeid, recipename, recipecategory, recipeimageurl FROM recipes ORDER BY RAND() LIMIT 4")
+    let recipes = sqlx::query_as::<_, GetRecipe>("SELECT recipeid, recipename, recipecategory, recipeimageurl, recipedescription, recipetime, recipeportions, recipecost, recipekcal FROM recipes ORDER BY RAND() LIMIT 4")
         .fetch_all(&pool)
         .await
         .expect("Failed to fetch recipes");
